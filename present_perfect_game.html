@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Present Perfect: Past to Now</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF2F6;
+    --panel:#FFFFFF;
+    --ink:#1F2A3A;
+    --muted:#6B7688;
+    --line:#DCE3EA;
+    --amber:#D9A441;
+    --amber-dark:#B4822C;
+    --teal:#2A9D8F;
+    --teal-light:#DFF3F0;
+    --clay:#E07A5F;
+    --clay-light:#FBE7E1;
+    --navy-deep:#16202E;
+  }
+  *{box-sizing:border-box;}
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    background-image: radial-gradient(circle at 15% 8%, #E4ECF3 0%, var(--bg) 45%);
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding:0 0 40px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap{ max-width:740px; margin:0 auto; padding:32px 22px 20px 22px; }
+
+  .header-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:32px;
+    margin:0;
+    color:var(--navy-deep);
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--muted);
+    margin:4px 0 0 0;
+  }
+  .badge{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:0.04em;
+    color:var(--amber-dark);
+    background:#FBF1DD;
+    border:1px solid #EFDBA6;
+    padding:5px 10px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+
+  .instructions{
+    font-size:14.5px;
+    line-height:1.5;
+    color:var(--ink);
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:13px 16px;
+    margin:16px 0 20px 0;
+  }
+  .instructions b{ color:var(--navy-deep); }
+
+  /* Stat row: timer + score */
+  .stat-row{
+    display:flex;
+    gap:12px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .stat-pill{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:9px 14px;
+    font-weight:700;
+    font-size:14px;
+  }
+  .stat-pill .icon{ font-size:15px; }
+  #timerText{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:15px;
+    color:var(--navy-deep);
+    letter-spacing:0.02em;
+  }
+  #scoreText{ color:var(--teal); }
+  .sound-toggle{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:9px 14px;
+    font-weight:700;
+    font-size:13.5px;
+    cursor:pointer;
+    color:var(--muted);
+    user-select:none;
+  }
+  .sound-toggle.on{ color:var(--amber-dark); border-color:#EFDBA6; background:#FBF1DD; }
+
+  /* Timeline: signature element - past to now */
+  .timeline-wrap{
+    position:relative;
+    margin:6px 0 26px 0;
+    padding:0 4px;
+  }
+  .timeline-labels{
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .timeline-track{
+    position:relative;
+    height:34px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .timeline-track::before{
+    content:"";
+    position:absolute;
+    left:4px; right:4px; top:50%;
+    height:3px;
+    background:var(--line);
+    transform:translateY(-50%);
+    border-radius:2px;
+  }
+  .timeline-fill{
+    position:absolute;
+    left:4px; top:50%;
+    height:3px;
+    background:linear-gradient(90deg, var(--amber), var(--teal));
+    transform:translateY(-50%);
+    border-radius:2px;
+    transition: width .4s ease;
+    z-index:1;
+  }
+  .tick{
+    position:relative;
+    z-index:2;
+    width:22px;height:22px;
+    border-radius:50%;
+    background:#fff;
+    border:3px solid var(--line);
+    transition: all .25s ease;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;
+    font-weight:800;
+    color:var(--muted);
+  }
+  .tick.done{ border-color:var(--teal); background:var(--teal); color:#fff; }
+  .tick.current{ border-color:var(--amber); box-shadow:0 0 0 5px #FBF1DD; }
+  .tick.now-flag{ font-size:13px; }
+
+  /* Game card */
+  .game-card{
+    background:var(--panel);
+    border-radius:16px;
+    border:1px solid var(--line);
+    box-shadow: 0 1px 2px rgba(20,30,45,0.04), 0 10px 24px rgba(20,30,45,0.05);
+    padding:26px 22px 22px 22px;
+    min-height:230px;
+    position:relative;
+  }
+
+  .slots-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    min-height:60px;
+    align-items:flex-end;
+    margin-bottom:24px;
+    padding-bottom:10px;
+    border-bottom:2px solid var(--navy-deep);
+  }
+  .slot{
+    min-width:60px;
+    height:46px;
+    border-radius:9px;
+    border:2px dashed #C7D0DB;
+    background:#F7F9FB;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: background .15s ease, border-color .15s ease;
+    flex-shrink:0;
+  }
+  .slot.hover-target{ border-color:var(--amber); background:#FBF1DD; }
+  .slot.filled{ border-style:solid; border-color:transparent; background:transparent; padding:0; }
+
+  .bank-label{
+    font-size:11.5px;
+    font-weight:800;
+    letter-spacing:0.07em;
+    text-transform:uppercase;
+    color:#9AA5B4;
+    margin:2px 0 10px 0;
+  }
+  .bank-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    min-height:56px;
+    padding:10px;
+    border-radius:12px;
+    background:#F3F6F9;
+    border:1px dashed var(--line);
+  }
+  .bank-row.hover-target{ outline:2px dashed var(--amber); outline-offset:-4px; }
+
+  .tile{
+    touch-action:none;
+    user-select:none;
+    cursor:grab;
+    background:#fff;
+    border:2px solid #D6DEE7;
+    border-radius:9px;
+    padding:10px 15px;
+    font-weight:700;
+    font-size:16px;
+    color:var(--navy-deep);
+    box-shadow: 0 2px 0 #D6DEE7;
+    transition: box-shadow .1s ease, transform .12s ease;
+    white-space:nowrap;
+  }
+  .tile:active{ cursor:grabbing; }
+  .tile:hover:not(.correct-lock){ transform: translateY(-2px); box-shadow:0 5px 0 #D6DEE7; }
+  .tile.dragging{
+    position:fixed;
+    z-index:1000;
+    box-shadow: 0 10px 20px rgba(20,30,45,0.25);
+    transform: scale(1.06) rotate(-2deg);
+    pointer-events:none;
+    opacity:0.97;
+  }
+  .tile.correct-lock{
+    background:var(--teal-light);
+    border-color:var(--teal);
+    color:#1A5A52;
+    box-shadow:none;
+    cursor:default;
+  }
+  .tile.wrong-shake{ animation: shake .4s ease; }
+  @keyframes shake{
+    0%,100%{ transform: translateX(0); }
+    20%{ transform: translateX(-6px); }
+    40%{ transform: translateX(6px); }
+    60%{ transform: translateX(-4px); }
+    80%{ transform: translateX(4px); }
+  }
+
+  .actions{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  button{
+    font-family:'Inter',sans-serif;
+    font-weight:800;
+    font-size:14.5px;
+    border-radius:10px;
+    padding:11px 20px;
+    border:none;
+    cursor:pointer;
+    transition: transform .08s ease, opacity .1s ease;
+  }
+  button:active{ transform: translateY(1px); }
+  button:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn-check{ background:var(--navy-deep); color:#fff; }
+  .btn-reset{ background:#EDF1F5; color:var(--ink); }
+  .btn-next{ background:var(--teal); color:#fff; }
+
+  .feedback{ font-weight:700; font-size:14.5px; padding:8px 0 0 2px; min-height:24px; }
+  .feedback.correct{ color:var(--teal); }
+  .feedback.incorrect{ color:var(--clay); }
+
+  .done-screen{ text-align:center; padding:26px 10px; position:relative; overflow:hidden; }
+  .done-screen .big{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:30px;
+    color:var(--navy-deep);
+    margin-bottom:8px;
+  }
+  .done-screen .score-big{ font-size:19px; font-weight:800; color:var(--teal); margin-bottom:4px; }
+  .done-screen .time-big{ font-family:'JetBrains Mono', monospace; font-size:14px; font-weight:700; color:var(--muted); margin-bottom:20px; }
+
+  .confetti{
+    position:absolute; top:-10px; width:8px;height:13px; opacity:0.9;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{ to{ transform: translateY(260px) rotate(360deg); opacity:0.15; } }
+
+  @media (max-width:480px){
+    .wrap{ padding:22px 14px 16px 14px; }
+    h1{ font-size:25px; }
+    .tile{ padding:9px 12px; font-size:14.5px; }
+    .timeline-labels{ font-size:9.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header-row">
+    <div>
+      <h1>Present Perfect: Past → Now</h1>
+      <p class="subtitle">Unjumble the sentence, then drop it on the timeline</p>
+    </div>
+    <div class="badge">B1 / B2</div>
+  </div>
+
+  <div class="instructions">
+    Drag the word cards onto the line to build a <b>present perfect</b> sentence (has/have + past participle). Tap <b>Check</b> when you're ready.
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-pill"><span class="icon">⏱</span><span id="timerText">0:00</span></div>
+    <div class="stat-pill"><span class="icon">★</span><span id="scoreText">Score: 0 / 8</span></div>
+    <div class="sound-toggle on" id="soundToggle"><span id="soundIcon">🔊</span><span id="soundLabel">Sound on</span></div>
+  </div>
+
+  <div class="timeline-wrap">
+    <div class="timeline-labels"><span>PAST</span><span>NOW</span></div>
+    <div class="timeline-track" id="timelineTrack"></div>
+  </div>
+
+  <div class="game-card" id="gameCard">
+    <div id="gameContent"><!-- populated by JS --></div>
+  </div>
+</div>
+
+<script>
+const SENTENCES = [
+  ["She", "has", "already", "finished", "her", "homework."],
+  ["They", "have", "never", "been", "to", "Japan."],
+  ["I", "have", "lived", "in", "this", "city", "for", "ten", "years."],
+  ["He", "has", "just", "finished", "his", "lunch."],
+  ["We", "have", "known", "each", "other", "since", "childhood."],
+  ["Have", "you", "ever", "tried", "Thai", "food?"],
+  ["The", "company", "has", "grown", "a", "lot", "this", "year."],
+  ["I", "haven't", "seen", "that", "movie", "yet."]
+];
+
+let current = 0;
+let score = 0;
+let scored = [];
+let bank = [];
+let slots = [];
+let tilePool = {};
+let soundOn = true;
+
+function shuffledIndices(n){
+  let arr = [...Array(n).keys()];
+  let attempts = 0;
+  do{
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    attempts++;
+  } while (arr.every((v,i)=>v===i) && n>1 && attempts<20);
+  return arr;
+}
+
+function initSentence(idx){
+  const words = SENTENCES[idx];
+  const order = shuffledIndices(words.length);
+  bank = order.map((wIdx,i)=>({ id: 'w'+idx+'_'+wIdx, text: words[wIdx], rot: (Math.random()*6-3).toFixed(1) }));
+  slots = new Array(words.length).fill(null);
+  bank.forEach(t => { tilePool[t.id] = t; });
+  render();
+}
+
+function buildTimeline(){
+  const track = document.getElementById('timelineTrack');
+  track.innerHTML = '';
+  const fill = document.createElement('div');
+  fill.className = 'timeline-fill';
+  const doneCount = scored.filter(Boolean).length;
+  const pct = SENTENCES.length > 1 ? (doneCount/(SENTENCES.length-1))*100 : 100;
+  fill.style.width = Math.min(pct, 100) + '%';
+  track.appendChild(fill);
+
+  SENTENCES.forEach((s,i) => {
+    const t = document.createElement('div');
+    t.className = 'tick' + (scored[i] ? ' done' : (i===current ? ' current' : ''));
+    if(i === SENTENCES.length-1){ t.classList.add('now-flag'); }
+    t.textContent = scored[i] ? '✓' : (i+1);
+    track.appendChild(t);
+  });
+}
+
+function render(){
+  document.getElementById('scoreText').textContent = `Score: ${score} / ${SENTENCES.length}`;
+  buildTimeline();
+
+  const card = document.getElementById('gameContent');
+  card.innerHTML = '';
+
+  const slotsRow = document.createElement('div');
+  slotsRow.className = 'slots-row';
+  slotsRow.id = 'slotsRow';
+  slots.forEach((tileId, i) => {
+    const s = document.createElement('div');
+    s.className = 'slot' + (tileId ? ' filled' : '');
+    s.dataset.index = i;
+    if(tileId){
+      const tileData = tilePool[tileId];
+      s.appendChild(makeTile(tileData, true));
+    }
+    slotsRow.appendChild(s);
+  });
+  card.appendChild(slotsRow);
+
+  const bankLabel = document.createElement('div');
+  bankLabel.className = 'bank-label';
+  bankLabel.textContent = 'Word Bank';
+  card.appendChild(bankLabel);
+
+  const bankRow = document.createElement('div');
+  bankRow.className = 'bank-row';
+  bankRow.id = 'bankRow';
+  bank.forEach(t => bankRow.appendChild(makeTile(t, false)));
+  card.appendChild(bankRow);
+
+  const feedback = document.createElement('div');
+  feedback.className = 'feedback';
+  feedback.id = 'feedback';
+  card.appendChild(feedback);
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  actions.innerHTML = `
+    <button class="btn-check" id="checkBtn">Check</button>
+    <button class="btn-reset" id="resetBtn">Reset</button>
+    <button class="btn-next" id="nextBtn" ${scored[current] ? '' : 'disabled'}>${current === SENTENCES.length-1 ? 'Finish' : 'Next Sentence'}</button>
+  `;
+  card.appendChild(actions);
+
+  document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+  document.getElementById('resetBtn').addEventListener('click', ()=>initSentence(current));
+  document.getElementById('nextBtn').addEventListener('click', goNext);
+
+  attachDragHandlers();
+}
+
+function makeTile(t, isPlaced){
+  tilePool[t.id] = t;
+  const el = document.createElement('div');
+  el.className = 'tile' + (isPlaced ? ' placed' : '');
+  el.textContent = t.text;
+  el.dataset.id = t.id;
+  return el;
+}
+
+function attachDragHandlers(){
+  document.querySelectorAll('.tile').forEach(el => {
+    el.addEventListener('pointerdown', onPointerDown);
+  });
+}
+
+let dragState = null;
+
+function onPointerDown(e){
+  const tile = e.currentTarget;
+  if(tile.classList.contains('correct-lock')) return;
+  e.preventDefault();
+  const rect = tile.getBoundingClientRect();
+  const originParent = tile.parentElement;
+  const originSlotIndex = originParent.classList.contains('slot') ? parseInt(originParent.dataset.index) : null;
+
+  const ghost = tile.cloneNode(true);
+  ghost.classList.add('dragging');
+  ghost.style.width = rect.width+'px';
+  ghost.style.left = rect.left+'px';
+  ghost.style.top = rect.top+'px';
+  document.body.appendChild(ghost);
+  tile.style.visibility = 'hidden';
+
+  dragState = {
+    id: tile.dataset.id,
+    ghost,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    originSlotIndex
+  };
+
+  const move = (ev) => {
+    ghost.style.left = (ev.clientX - dragState.offsetX)+'px';
+    ghost.style.top = (ev.clientY - dragState.offsetY)+'px';
+    updateHoverTargets(ev.clientX, ev.clientY);
+  };
+  const up = (ev) => {
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', up);
+    handleDrop(ev.clientX, ev.clientY);
+    ghost.remove();
+    clearHoverTargets();
+    dragState = null;
+  };
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', up);
+}
+
+function updateHoverTargets(x,y){
+  clearHoverTargets();
+  const el = document.elementFromPoint(x,y);
+  if(!el) return;
+  const slot = el.closest('.slot');
+  const bankRow = el.closest('#bankRow');
+  if(slot) slot.classList.add('hover-target');
+  else if(bankRow) bankRow.classList.add('hover-target');
+}
+function clearHoverTargets(){
+  document.querySelectorAll('.hover-target').forEach(e=>e.classList.remove('hover-target'));
+}
+
+function handleDrop(x,y){
+  const el = document.elementFromPoint(x,y);
+  if(!el){ return; }
+  const slotEl = el.closest('.slot');
+  const bankRowEl = el.closest('#bankRow');
+  const draggedId = dragState.id;
+  const fromSlotIndex = dragState.originSlotIndex;
+
+  if(slotEl){
+    const targetIndex = parseInt(slotEl.dataset.index);
+    const occupyingId = slots[targetIndex];
+
+    if(fromSlotIndex !== null){ slots[fromSlotIndex] = null; }
+    else { bank = bank.filter(t => t.id !== draggedId); }
+
+    if(occupyingId){
+      if(fromSlotIndex !== null){ slots[fromSlotIndex] = occupyingId; }
+      else { bank.push(tilePool[occupyingId]); }
+    }
+    slots[targetIndex] = draggedId;
+  } else if (bankRowEl || el.closest('.bank-label')) {
+    if(fromSlotIndex !== null){
+      slots[fromSlotIndex] = null;
+      bank.push(tilePool[draggedId]);
+    }
+  }
+  render();
+}
+
+function checkAnswer(){
+  const words = SENTENCES[current];
+  const feedback = document.getElementById('feedback');
+  const allFilled = slots.every(s => s !== null);
+  if(!allFilled){
+    feedback.textContent = "Fill in all the blanks first!";
+    feedback.className = 'feedback incorrect';
+    return;
+  }
+  const currentText = slots.map(id => tilePool[id].text);
+  const isCorrect = currentText.every((w,i) => w === words[i]);
+
+  if(isCorrect){
+    feedback.textContent = "Correct! Well done. 🎉";
+    feedback.className = 'feedback correct';
+    document.querySelectorAll('.slot .tile').forEach(t => t.classList.add('correct-lock'));
+    if(!scored[current]){ scored[current] = true; score++; }
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('scoreText').textContent = `Score: ${score} / ${SENTENCES.length}`;
+    buildTimeline();
+    playCorrectSound();
+  } else {
+    feedback.textContent = "Not quite — check the word order and try again.";
+    feedback.className = 'feedback incorrect';
+    document.querySelectorAll('.slot .tile').forEach(t => {
+      t.classList.add('wrong-shake');
+      setTimeout(()=>t.classList.remove('wrong-shake'), 400);
+    });
+    playIncorrectSound();
+  }
+}
+
+function goNext(){
+  if(current === SENTENCES.length - 1){
+    showDoneScreen();
+  } else {
+    current++;
+    initSentence(current);
+  }
+}
+
+function showDoneScreen(){
+  stopTimer();
+  const card = document.getElementById('gameContent');
+  card.innerHTML = `
+    <div class="done-screen" id="doneScreen">
+      <div class="big">You've reached NOW! 🎉</div>
+      <div class="score-big">Score: ${score} / ${SENTENCES.length}</div>
+      <div class="time-big">Completed in ${formatTime(elapsedSeconds)}</div>
+      <button class="btn-check" id="playAgainBtn">Play Again</button>
+    </div>
+  `;
+  document.getElementById('playAgainBtn').addEventListener('click', () => {
+    current = 0; score = 0; scored = [];
+    initSentence(current);
+    startTimer();
+  });
+  launchConfetti();
+  playFinishSound();
+}
+
+function launchConfetti(){
+  const doneScreen = document.getElementById('doneScreen');
+  const colors = ['#D9A441','#2A9D8F','#E07A5F','#1F2A3A'];
+  for(let i=0;i<24;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100+'%';
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration = (1.1 + Math.random()*0.8)+'s';
+    c.style.animationDelay = (Math.random()*0.4)+'s';
+    doneScreen.appendChild(c);
+  }
+}
+
+// --- Timer ---
+let elapsedSeconds = 0;
+let timerInterval = null;
+function formatTime(sec){
+  const m = Math.floor(sec/60);
+  const s = sec%60;
+  return m+':'+String(s).padStart(2,'0');
+}
+function startTimer(){
+  stopTimer();
+  elapsedSeconds = 0;
+  document.getElementById('timerText').textContent = formatTime(elapsedSeconds);
+  timerInterval = setInterval(()=>{
+    elapsedSeconds++;
+    const el = document.getElementById('timerText');
+    if(el) el.textContent = formatTime(elapsedSeconds);
+  }, 1000);
+}
+function stopTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+}
+
+// --- Sound (synthesized, no external files) ---
+let audioCtx = null;
+function getCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function tone(freq, start, duration, type='sine', gainVal=0.15){
+  if(!soundOn) return;
+  const ctx = getCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.value = gainVal;
+  osc.connect(gain).connect(ctx.destination);
+  const t0 = ctx.currentTime + start;
+  osc.start(t0);
+  gain.gain.setValueAtTime(gainVal, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+  osc.stop(t0 + duration + 0.02);
+}
+function playCorrectSound(){ tone(523.25, 0, 0.12,'sine',0.16); tone(783.99, 0.1, 0.18,'sine',0.14); }
+function playIncorrectSound(){ tone(220, 0, 0.18,'sawtooth',0.10); tone(180, 0.12, 0.22,'sawtooth',0.09); }
+function playFinishSound(){
+  [523.25,659.25,783.99,1046.5].forEach((f,i)=> tone(f, i*0.12, 0.22,'triangle',0.15));
+}
+
+document.getElementById('soundToggle').addEventListener('click', () => {
+  soundOn = !soundOn;
+  const t = document.getElementById('soundToggle');
+  const icon = document.getElementById('soundIcon');
+  const label = document.getElementById('soundLabel');
+  t.classList.toggle('on', soundOn);
+  icon.textContent = soundOn ? '🔊' : '🔇';
+  label.textContent = soundOn ? 'Sound on' : 'Sound off';
+  if(soundOn){ getCtx(); tone(660,0,0.08,'sine',0.1); }
+});
+
+initSentence(0);
+startTimer();
+</script>
+</body>
+</html>
