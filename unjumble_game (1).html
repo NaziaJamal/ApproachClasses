@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Unjumble the Sentences</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EE;
+    --ink:#2B2B2B;
+    --rule:#AFC9DD;
+    --margin-line:#E2A0A0;
+    --coral:#E76F51;
+    --coral-dark:#C4552F;
+    --sage:#588157;
+    --sage-light:#DCEBDA;
+    --clay:#BC4749;
+    --clay-light:#FBE2E1;
+    --paper-shadow: rgba(43,43,43,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    background:var(--paper);
+    font-family:'Nunito',sans-serif;
+    color:var(--ink);
+    -webkit-tap-highlight-color: transparent;
+  }
+  body{
+    background-image:
+      repeating-linear-gradient(var(--paper), var(--paper) 39px, var(--rule) 40px);
+    min-height:100vh;
+    padding:0 0 40px 0;
+  }
+  .page-margin{
+    position:relative;
+  }
+  .page-margin::before{
+    content:"";
+    position:absolute;
+    top:0; bottom:0; left:56px;
+    width:2px;
+    background:var(--margin-line);
+    opacity:0.55;
+    z-index:0;
+  }
+  .wrap{
+    max-width:720px;
+    margin:0 auto;
+    padding:28px 24px 20px 76px;
+    position:relative;
+    z-index:1;
+  }
+  h1{
+    font-family:'Patrick Hand', cursive;
+    font-size:44px;
+    margin:0 0 2px 0;
+    color:var(--coral-dark);
+    line-height:1.1;
+  }
+  .subtitle{
+    font-size:16px;
+    font-weight:700;
+    color:#6b6b6b;
+    margin:0 0 14px 0;
+  }
+  .instructions{
+    font-size:15px;
+    line-height:1.5;
+    background:#fff;
+    border:1px dashed var(--rule);
+    border-radius:10px;
+    padding:12px 16px;
+    margin-bottom:6px;
+  }
+  .progress-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:18px 0 6px 0;
+  }
+  .progress-label{
+    font-weight:800;
+    font-size:15px;
+    color:var(--coral-dark);
+  }
+  .score-label{
+    font-weight:800;
+    font-size:15px;
+    color:var(--sage);
+  }
+  .dots{
+    display:flex;
+    gap:6px;
+    margin-bottom:22px;
+  }
+  .dot{
+    width:12px;height:12px;border-radius:50%;
+    background:#e3ddd0;
+    border:2px solid #d8d0bd;
+    transition: all .2s ease;
+  }
+  .dot.done{ background:var(--sage); border-color:var(--sage); }
+  .dot.current{ background:var(--coral); border-color:var(--coral-dark); transform:scale(1.2); }
+
+  .game-card{
+    background:#fff;
+    border-radius:16px;
+    box-shadow: 0 6px 0 var(--paper-shadow), 0 8px 18px rgba(0,0,0,0.06);
+    padding:26px 22px 22px 22px;
+    margin-bottom:18px;
+    min-height:230px;
+    position:relative;
+  }
+
+  .slots-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    min-height:64px;
+    align-items:flex-end;
+    margin-bottom:26px;
+    padding-bottom:8px;
+    border-bottom:3px solid var(--ink);
+  }
+  .slot{
+    min-width:64px;
+    height:48px;
+    border-radius:8px;
+    border:2.5px dashed #cfcabb;
+    background:#fbfaf6;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: background .15s ease, border-color .15s ease;
+    flex-shrink:0;
+  }
+  .slot.hover-target{
+    border-color:var(--coral);
+    background:#fff2ec;
+  }
+  .slot.filled{
+    border-style:solid;
+    border-color:transparent;
+    background:transparent;
+    padding:0;
+  }
+
+  .bank-label{
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:#9a9382;
+    margin:4px 0 10px 0;
+  }
+  .bank-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    min-height:58px;
+    padding:8px;
+    border-radius:10px;
+    background:repeating-linear-gradient(45deg, #fbfaf6, #fbfaf6 10px, #f5f2e9 10px, #f5f2e9 20px);
+  }
+  .bank-row.hover-target{
+    outline:2.5px dashed var(--coral);
+    outline-offset:-4px;
+  }
+
+  .tile{
+    touch-action:none;
+    user-select:none;
+    cursor:grab;
+    background:#FFF7EC;
+    border:2px solid #e7ddc4;
+    border-radius:8px;
+    padding:10px 16px;
+    font-weight:800;
+    font-size:17px;
+    color:var(--ink);
+    box-shadow: 0 3px 0 #e7ddc4;
+    transform: rotate(var(--rot,0deg));
+    transition: box-shadow .1s ease, transform .12s ease;
+    white-space:nowrap;
+  }
+  .tile:active{ cursor:grabbing; }
+  .tile.dragging{
+    position:fixed;
+    z-index:1000;
+    box-shadow: 0 10px 18px rgba(0,0,0,0.22);
+    transform: rotate(-4deg) scale(1.06);
+    pointer-events:none;
+    opacity:0.97;
+  }
+  .tile.placed{
+    box-shadow: 0 2px 0 #e7ddc4;
+  }
+  .tile.correct-lock{
+    background:var(--sage-light);
+    border-color:var(--sage);
+    box-shadow:none;
+    cursor:default;
+  }
+  .tile.wrong-shake{
+    animation: shake .4s ease;
+  }
+  @keyframes shake{
+    0%,100%{ transform: translateX(0) rotate(0); }
+    20%{ transform: translateX(-6px) rotate(-3deg); }
+    40%{ transform: translateX(6px) rotate(3deg); }
+    60%{ transform: translateX(-4px) rotate(-2deg); }
+    80%{ transform: translateX(4px) rotate(2deg); }
+  }
+
+  .actions{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:'Nunito',sans-serif;
+    font-weight:800;
+    font-size:15px;
+    border-radius:10px;
+    padding:11px 20px;
+    border:none;
+    cursor:pointer;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+    transition: transform .08s ease;
+  }
+  button:active{ transform: translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.15); }
+  button:disabled{ opacity:0.45; cursor:not-allowed; box-shadow:none; }
+
+  .btn-check{ background:var(--coral); color:#fff; }
+  .btn-reset{ background:#efe9db; color:var(--ink); }
+  .btn-next{ background:var(--sage); color:#fff; }
+
+  .feedback{
+    font-weight:800;
+    font-size:15px;
+    padding:8px 0 0 2px;
+    min-height:26px;
+  }
+  .feedback.correct{ color:var(--sage); }
+  .feedback.incorrect{ color:var(--clay); }
+
+  .done-screen{
+    text-align:center;
+    padding:30px 10px;
+  }
+  .done-screen .big{
+    font-family:'Patrick Hand', cursive;
+    font-size:38px;
+    color:var(--coral-dark);
+    margin-bottom:6px;
+  }
+  .done-screen .score-big{
+    font-size:22px;
+    font-weight:800;
+    color:var(--sage);
+    margin-bottom:18px;
+  }
+
+  @media (max-width:480px){
+    .wrap{ padding:20px 14px 16px 50px; }
+    .page-margin::before{ left:34px; }
+    h1{ font-size:34px; }
+    .tile{ padding:9px 13px; font-size:15px; }
+  }
+</style>
+</head>
+<body>
+<div class="page-margin">
+<div class="wrap">
+  <h1>Unjumble the Sentences!</h1>
+  <div class="subtitle">Simple Past Tense — Drag &amp; Drop</div>
+  <div class="instructions">
+    Drag the word cards onto the line to build a sentence about the past. Tap <strong>Check</strong> when you're done.
+  </div>
+
+  <div class="progress-row">
+    <div class="progress-label" id="progressLabel">Sentence 1 of 7</div>
+    <div class="score-label" id="scoreLabel">Score: 0 / 7</div>
+  </div>
+  <div class="dots" id="dots"></div>
+
+  <div class="game-card" id="gameCard">
+    <!-- populated by JS -->
+  </div>
+</div>
+</div>
+
+<script>
+const SENTENCES = [
+  ["I", "went", "to", "the", "store."],
+  ["She", "watched", "TV", "last", "night."],
+  ["We", "ate", "breakfast", "at", "8", "AM."],
+  ["He", "cleaned", "his", "room."],
+  ["They", "played", "soccer", "on", "Sunday."],
+  ["I", "saw", "a", "movie", "yesterday."],
+  ["She", "cooked", "dinner."]
+];
+
+let current = 0;
+let score = 0;
+let scored = []; // track which sentences already scored
+let bank = [];   // array of {id, text}
+let slots = [];  // array of tileId or null
+let tileEls = {}; // id -> element ref (rebuilt each render)
+
+function shuffledIndices(n){
+  let arr = [...Array(n).keys()];
+  let attempts = 0;
+  do{
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    attempts++;
+  } while (arr.every((v,i)=>v===i) && n>1 && attempts<20);
+  return arr;
+}
+
+function initSentence(idx){
+  const words = SENTENCES[idx];
+  const order = shuffledIndices(words.length);
+  bank = order.map((wIdx,i)=>({ id: 'w'+idx+'_'+wIdx, text: words[wIdx], rot: (Math.random()*8-4).toFixed(1) }));
+  slots = new Array(words.length).fill(null);
+  bank.forEach(t => { tilePool[t.id] = t; });
+  render();
+}
+
+function buildDots(){
+  const dotsEl = document.getElementById('dots');
+  dotsEl.innerHTML = '';
+  for(let i=0;i<SENTENCES.length;i++){
+    const d = document.createElement('div');
+    d.className = 'dot' + (scored[i] ? ' done' : (i===current ? ' current' : ''));
+    dotsEl.appendChild(d);
+  }
+}
+
+function render(){
+  document.getElementById('progressLabel').textContent = `Sentence ${current+1} of ${SENTENCES.length}`;
+  document.getElementById('scoreLabel').textContent = `Score: ${score} / ${SENTENCES.length}`;
+  buildDots();
+
+  const card = document.getElementById('gameCard');
+  card.innerHTML = '';
+
+  const slotsRow = document.createElement('div');
+  slotsRow.className = 'slots-row';
+  slotsRow.id = 'slotsRow';
+  slots.forEach((tileId, i) => {
+    const s = document.createElement('div');
+    s.className = 'slot' + (tileId ? ' filled' : '');
+    s.dataset.index = i;
+    if(tileId){
+      const tileData = tilePool[tileId];
+      s.appendChild(makeTile(tileData, true));
+    }
+    slotsRow.appendChild(s);
+  });
+  card.appendChild(slotsRow);
+
+  const bankLabel = document.createElement('div');
+  bankLabel.className = 'bank-label';
+  bankLabel.textContent = 'Word Bank';
+  card.appendChild(bankLabel);
+
+  const bankRow = document.createElement('div');
+  bankRow.className = 'bank-row';
+  bankRow.id = 'bankRow';
+  bank.forEach(t => bankRow.appendChild(makeTile(t, false)));
+  card.appendChild(bankRow);
+
+  const feedback = document.createElement('div');
+  feedback.className = 'feedback';
+  feedback.id = 'feedback';
+  card.appendChild(feedback);
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  actions.innerHTML = `
+    <button class="btn-check" id="checkBtn">Check</button>
+    <button class="btn-reset" id="resetBtn">Reset</button>
+    <button class="btn-next" id="nextBtn" ${scored[current] ? '' : 'disabled'}>${current === SENTENCES.length-1 ? 'Finish' : 'Next Sentence'}</button>
+  `;
+  card.appendChild(actions);
+
+  document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+  document.getElementById('resetBtn').addEventListener('click', ()=>initSentence(current));
+  document.getElementById('nextBtn').addEventListener('click', goNext);
+
+  attachDragHandlers();
+}
+
+function placedTiles(){
+  // helper not really needed since bank+slot tiles are tracked separately; kept for lookup safety
+  return [];
+}
+
+// We track full tile pool per sentence separately from bank/slots arrays
+let tilePool = {};
+
+function makeTile(t, isPlaced){
+  tilePool[t.id] = t;
+  const el = document.createElement('div');
+  el.className = 'tile' + (isPlaced ? ' placed' : '');
+  el.textContent = t.text;
+  el.dataset.id = t.id;
+  el.style.setProperty('--rot', (t.rot||0)+'deg');
+  return el;
+}
+
+function attachDragHandlers(){
+  document.querySelectorAll('.tile').forEach(el => {
+    el.addEventListener('pointerdown', onPointerDown);
+  });
+}
+
+let dragState = null;
+
+function onPointerDown(e){
+  const tile = e.currentTarget;
+  if(tile.classList.contains('correct-lock')) return;
+  e.preventDefault();
+  const rect = tile.getBoundingClientRect();
+  const originParent = tile.parentElement;
+  const originSlotIndex = originParent.classList.contains('slot') ? parseInt(originParent.dataset.index) : null;
+
+  const ghost = tile.cloneNode(true);
+  ghost.classList.add('dragging');
+  ghost.style.width = rect.width+'px';
+  ghost.style.left = rect.left+'px';
+  ghost.style.top = rect.top+'px';
+  document.body.appendChild(ghost);
+
+  tile.style.visibility = 'hidden';
+
+  dragState = {
+    id: tile.dataset.id,
+    ghost,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    originSlotIndex,
+    originalTile: tile
+  };
+
+  const move = (ev) => {
+    ghost.style.left = (ev.clientX - dragState.offsetX)+'px';
+    ghost.style.top = (ev.clientY - dragState.offsetY)+'px';
+    updateHoverTargets(ev.clientX, ev.clientY);
+  };
+  const up = (ev) => {
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', up);
+    handleDrop(ev.clientX, ev.clientY);
+    ghost.remove();
+    clearHoverTargets();
+    dragState = null;
+  };
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', up);
+}
+
+function updateHoverTargets(x,y){
+  clearHoverTargets();
+  const el = document.elementFromPoint(x,y);
+  if(!el) return;
+  const slot = el.closest('.slot');
+  const bankRow = el.closest('#bankRow');
+  if(slot) slot.classList.add('hover-target');
+  else if(bankRow) bankRow.classList.add('hover-target');
+}
+function clearHoverTargets(){
+  document.querySelectorAll('.hover-target').forEach(e=>e.classList.remove('hover-target'));
+}
+
+function handleDrop(x,y){
+  const el = document.elementFromPoint(x,y);
+  if(!el){ return; }
+  const slotEl = el.closest('.slot');
+  const bankRowEl = el.closest('#bankRow');
+  const draggedId = dragState.id;
+  const fromSlotIndex = dragState.originSlotIndex;
+
+  if(slotEl){
+    const targetIndex = parseInt(slotEl.dataset.index);
+    const occupyingId = slots[targetIndex];
+
+    // remove dragged tile from its origin
+    if(fromSlotIndex !== null){
+      slots[fromSlotIndex] = null;
+    } else {
+      bank = bank.filter(t => t.id !== draggedId);
+    }
+
+    // if target slot occupied, bump that tile back to origin (bank or where dragged came from)
+    if(occupyingId){
+      if(fromSlotIndex !== null){
+        slots[fromSlotIndex] = occupyingId;
+      } else {
+        bank.push(tilePool[occupyingId]);
+      }
+    }
+    slots[targetIndex] = draggedId;
+  } else if (bankRowEl || el.closest('.bank-label')) {
+    if(fromSlotIndex !== null){
+      slots[fromSlotIndex] = null;
+      bank.push(tilePool[draggedId]);
+    }
+    // if already in bank, no-op (order doesn't matter)
+  }
+  // else: dropped somewhere invalid -> no change, tile snaps back
+
+  render();
+}
+
+function checkAnswer(){
+  const words = SENTENCES[current];
+  const feedback = document.getElementById('feedback');
+  const allFilled = slots.every(s => s !== null);
+  if(!allFilled){
+    feedback.textContent = "Fill in all the blanks first!";
+    feedback.className = 'feedback incorrect';
+    return;
+  }
+  const currentText = slots.map(id => tilePool[id].text);
+  const isCorrect = currentText.every((w,i) => w === words[i]);
+
+  if(isCorrect){
+    feedback.textContent = "Correct! Great job. 🎉";
+    feedback.className = 'feedback correct';
+    document.querySelectorAll('.slot .tile').forEach(t => t.classList.add('correct-lock'));
+    if(!scored[current]){
+      scored[current] = true;
+      score++;
+    }
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('scoreLabel').textContent = `Score: ${score} / ${SENTENCES.length}`;
+    buildDots();
+  } else {
+    feedback.textContent = "Not quite — try again!";
+    feedback.className = 'feedback incorrect';
+    document.querySelectorAll('.slot .tile').forEach(t => {
+      t.classList.add('wrong-shake');
+      setTimeout(()=>t.classList.remove('wrong-shake'), 400);
+    });
+  }
+}
+
+function goNext(){
+  if(current === SENTENCES.length - 1){
+    showDoneScreen();
+  } else {
+    current++;
+    initSentence(current);
+  }
+}
+
+function showDoneScreen(){
+  const card = document.getElementById('gameCard');
+  document.getElementById('progressLabel').textContent = 'Finished!';
+  card.innerHTML = `
+    <div class="done-screen">
+      <div class="big">Nice work! 🎉</div>
+      <div class="score-big">You scored ${score} / ${SENTENCES.length}</div>
+      <button class="btn-check" id="playAgainBtn">Play Again</button>
+    </div>
+  `;
+  document.getElementById('playAgainBtn').addEventListener('click', () => {
+    current = 0; score = 0; scored = [];
+    initSentence(current);
+  });
+}
+
+initSentence(0);
+</script>
+</body>
+</html>
